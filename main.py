@@ -64,22 +64,30 @@ app = Flask(__name__)
 @app.route('/attack', methods=['GET'])
 def get_attack_info():
     technique_name = request.args.get("name", "").lower()
-    print(f"Received query for technique: {technique_name}")  # Debug log to check query
 
+    # Initialize a list to store matching techniques
+    result_techniques = []
+
+    # Loop through all available techniques
     for technique in techniques:
-        if "name" in technique and technique_name in technique["name"].lower():
+        # Check if the technique name matches the search term (case-insensitive)
+        if technique_name in technique["name"].lower():
+            # Prepare detailed info for each matched technique
             phase = get_kill_chain_phase(technique)
             cis_control = get_cis_control(phase)
-            print(f"Found technique: {technique['name']}")  # Debug log to check if technique was found
-            return jsonify({
+            result_techniques.append({
                 "technique": technique["name"],
+                "description": technique.get("description", "No description available."),
+                "id": technique.get("id", "No ID available."),
                 "kill_chain_phase": phase,
-                "cis_control": cis_control,
-                "description": technique.get("description", "No description available.")
+                "cis_control": cis_control
             })
-    
-    print("Technique not found in the dataset.")  # Debug log if no match is found
-    return jsonify({"error": "Technique not found"}), 404
+
+    # Return the results if any were found
+    if result_techniques:
+        return jsonify(result_techniques)
+    else:
+        return jsonify({"error": "Technique not found"}), 404
 
 # Function to run Nmap security scan
 def run_security_scan(target):
